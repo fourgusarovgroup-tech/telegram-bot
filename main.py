@@ -68,6 +68,12 @@ async def send_lesson(chat_id, user_id, context, override=None):
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(handle_button))
 
+
+@bot_app.route("/")
+def index():
+    return "🤖 Telegram бот работает!"
+
+
 # Webhook endpoint для Render
 @bot_app.post(f"/{TOKEN}")
 async def webhook():
@@ -78,9 +84,18 @@ async def webhook():
 # Старт приложения
 if __name__ == "__main__":
     import asyncio
+
     async def main():
         await application.initialize()
         await application.start()
+
+        # Установим webhook
+        webhook_url = f"https://telegram-bot-akmz.onrender.com/{TOKEN}"
+        await application.bot.set_webhook(webhook_url)
+        print(f"✅ Webhook установлен на: {webhook_url}")
+
+        # Запускаем Flask-сервер
         bot_app.run(host="0.0.0.0", port=5000)
 
     asyncio.run(main())
+

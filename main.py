@@ -25,7 +25,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_progress[user_id] = 0
     await send_lesson(update.effective_chat.id, user_id, context)
 
-# Кнопки
+# Обработка кнопок
 async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
@@ -46,7 +46,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_lesson(query.message.chat.id, user_id, context)
     await query.answer()
 
-# Отправка урока
+# Отправка текущего урока
 async def send_lesson(chat_id, user_id, context, override=None):
     index = override if override is not None else user_progress.get(user_id, 0)
     if index >= len(lessons):
@@ -65,23 +65,34 @@ async def send_lesson(chat_id, user_id, context, override=None):
     ])
     await context.bot.send_message(chat_id, text, reply_markup=keyboard)
 
-# Обработчики
+# Регистрируем обработчики
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(handle_button))
 
-# Корневой маршрут для проверки статуса
+# Корневой маршрут для статуса
 @bot_app.route("/")
 def index():
     return "🤖 Telegram бот работает!"
 
-# Webhook endpoint (с обёрткой синхронной)
+# Обёртка для безопасного вызова async-функций из sync Flask
+def async_to_sync(coro_func):
+    def wrapper(*args, **kwargs):
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        return loop.run_until_complete(coro_func(*args, **kwargs))
+    return wrapper
+
+# Webhook endpoint
 @bot_app.post(f"/{TOKEN}")
 def webhook():
     update = Update.de_json(request.get_json(force=True), application.bot)
-    asyncio.run(application.process_update(update))
+    async_to_sync(application.process_update)(update)
     return "ok"
 
-# Запуск
+# Точка входа
 if __name__ == "__main__":
     async def main():
         await application.initialize()
@@ -92,7 +103,7 @@ if __name__ == "__main__":
         await application.bot.set_webhook(webhook_url)
         print(f"✅ Webhook установлен: {webhook_url}")
 
-        # Запуск Flask
+        # Запуск Flask-сервера
         bot_app.run(host="0.0.0.0", port=5000)
 
     asyncio.run(main())

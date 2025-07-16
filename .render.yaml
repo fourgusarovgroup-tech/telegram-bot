@@ -1,8 +1,7 @@
 services:
   - type: web
     name: gusarov_stajirovka_bot
-    env: docker
-    buildCommand: ""
+    env: python       # <== не docker
     startCommand: "python main.py"
     envVars:
       - key: TOKEN

@@ -3,6 +3,3 @@ services:
     name: gusarov_stajirovka_bot
     env: docker       # <== не docker
     startCommand: "python main.py"
-    envVars:
-      - key: TOKEN
-        value: 7739788468:AAGKfIJD3V-Nl7kafJ6YlBmqp6Qkh8r90R0

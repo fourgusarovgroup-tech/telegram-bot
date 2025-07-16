@@ -9,7 +9,7 @@ from telegram.ext import (
 bot_app = Flask(__name__)
 
 # Telegram Bot Token из переменных окружения
-TOKEN = os.environ.get("7739788468:AAGKfIJD3V-Nl7kafJ6YlBmqp6Qkh8r90R0")
+TOKEN = os.environ.get("TOKEN")
 WEBHOOK_PATH = f"/{TOKEN}"
 
 # Уроки

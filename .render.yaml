@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: telegram-course-bot
+    name: gusarov_stajirovka_bot
     env: python
     buildCommand: ""
     startCommand: "python main.py"
     envVars:
-      - key: 7739788468:AAGKfIJD3V-Nl7kafJ6YlBmqp6Qkh8r90R0
-        value: ваш_токен_бота
+      - key: TOKEN
+        value: 7739788468:AAGKfIJD3V-Nl7kafJ6YlBmqp6Qkh8r90R0

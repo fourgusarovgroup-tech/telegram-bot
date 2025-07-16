@@ -1,17 +1,14 @@
 import os
-import asyncio
-from flask import Flask, request
+from quart import Quart, request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
-# Получаем токен из переменной окружения
 TOKEN = os.environ.get("BOT_TOKEN")
 
-# Инициализируем Flask и telegram-application
-bot_app = Flask(__name__)
+# Quart вместо Flask
+app = Quart(__name__)
 application = Application.builder().token(TOKEN).updater(None).build()
 
-# Простая структура уроков
 lessons = [
     {"text": "👋 Урок 1", "url": "https://youtu.be/vid1"},
     {"text": "🚀 Урок 2", "url": "https://youtu.be/vid2"},
@@ -19,13 +16,11 @@ lessons = [
 ]
 user_progress = {}
 
-# Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     user_progress[user_id] = 0
     await send_lesson(update.effective_chat.id, user_id, context)
 
-# Обработка кнопок
 async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user_id = query.from_user.id
@@ -46,7 +41,6 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_lesson(query.message.chat.id, user_id, context)
     await query.answer()
 
-# Отправка текущего урока
 async def send_lesson(chat_id, user_id, context, override=None):
     index = override if override is not None else user_progress.get(user_id, 0)
     if index >= len(lessons):
@@ -65,45 +59,31 @@ async def send_lesson(chat_id, user_id, context, override=None):
     ])
     await context.bot.send_message(chat_id, text, reply_markup=keyboard)
 
-# Регистрируем обработчики
+# Handlers
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(handle_button))
 
-# Корневой маршрут для статуса
-@bot_app.route("/")
-def index():
-    return "🤖 Telegram бот работает!"
+# Root
+@app.route("/")
+async def root():
+    return "🤖 Telegram bot is running!"
 
-# Обёртка для безопасного вызова async-функций из sync Flask
-def async_to_sync(coro_func):
-    def wrapper(*args, **kwargs):
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        return loop.run_until_complete(coro_func(*args, **kwargs))
-    return wrapper
-
-# Webhook endpoint
-@bot_app.post(f"/{TOKEN}")
-def webhook():
-    update = Update.de_json(request.get_json(force=True), application.bot)
-    async_to_sync(application.process_update)(update)
+# Webhook
+@app.post(f"/{TOKEN}")
+async def webhook():
+    data = await request.get_json()
+    update = Update.de_json(data, application.bot)
+    await application.process_update(update)
     return "ok"
 
-# Точка входа
+# Startup
 if __name__ == "__main__":
+    import asyncio
+
     async def main():
         await application.initialize()
         await application.start()
-
-        # Установить webhook
-        webhook_url = f"https://telegram-bot-akmz.onrender.com/{TOKEN}"
-        await application.bot.set_webhook(webhook_url)
-        print(f"✅ Webhook установлен: {webhook_url}")
-
-        # Запуск Flask-сервера
-        bot_app.run(host="0.0.0.0", port=5000)
+        await application.bot.set_webhook(f"https://telegram-bot-akmz.onrender.com/{TOKEN}")
+        await app.run_task(host="0.0.0.0", port=5000)
 
     asyncio.run(main())

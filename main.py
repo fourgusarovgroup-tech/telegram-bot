@@ -5,7 +5,7 @@ import sqlite3
 import os
 
 app = Flask(__name__)
-TOKEN = os.environ.get("TOKEN")
+TOKEN = os.environ.get("7739788468:AAGKfIJD3V-Nl7kafJ6YlBmqp6Qkh8r90R0")
 bot = Bot(token=TOKEN)
 
 # Инициализация базы данных

@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: telegram-course-bot
+    env: python
+    buildCommand: ""
+    startCommand: "python main.py"
+    envVars:
+      - key: TOKEN
+        value: ваш_токен_бота

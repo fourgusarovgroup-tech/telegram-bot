@@ -1,4 +1,5 @@
 import os
+import asyncio
 from flask import Flask, request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
@@ -68,34 +69,30 @@ async def send_lesson(chat_id, user_id, context, override=None):
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(handle_button))
 
-
+# Корневой маршрут для проверки статуса
 @bot_app.route("/")
 def index():
     return "🤖 Telegram бот работает!"
 
-
-# Webhook endpoint для Render
+# Webhook endpoint (с обёрткой синхронной)
 @bot_app.post(f"/{TOKEN}")
-async def webhook():
+def webhook():
     update = Update.de_json(request.get_json(force=True), application.bot)
-    await application.process_update(update)
+    asyncio.run(application.process_update(update))
     return "ok"
 
-# Старт приложения
+# Запуск
 if __name__ == "__main__":
-    import asyncio
-
     async def main():
         await application.initialize()
         await application.start()
 
-        # Установим webhook
+        # Установить webhook
         webhook_url = f"https://telegram-bot-akmz.onrender.com/{TOKEN}"
         await application.bot.set_webhook(webhook_url)
-        print(f"✅ Webhook установлен на: {webhook_url}")
+        print(f"✅ Webhook установлен: {webhook_url}")
 
-        # Запускаем Flask-сервер
+        # Запуск Flask
         bot_app.run(host="0.0.0.0", port=5000)
 
     asyncio.run(main())
-
